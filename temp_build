@@ -1,0 +1,12 @@
+#!/bin/sh
+rm tcp_chain
+rm main.o
+cd plugins
+rm *.so
+rm *.o
+gcc -g -fPIC -c plugin_direct.c
+gcc -g -shared plugin_direct.o -o plugin_direct.so
+cd ..
+gcc -g -c main.c
+gcc -g main.o -o tcp_chain -lev -ldl
+
