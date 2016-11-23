@@ -32,6 +32,9 @@ struct proxy_wrap {
 
 struct ev_loop* default_loop;
 
+int (*relay_send)();
+int (*relay_close)();
+
 int setnonblocking(int fd) {
   int flags;
   if (-1 == (flags = fcntl(fd, F_GETFL, 0))) {
@@ -108,7 +111,7 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
 
 }
 
-void on_connect(struct sock_info* identifier, int (*relay_send)(), int (*relay_close)()) {
+void on_connect(struct sock_info* identifier) {
   //printf("on_connect() invoked.\n");
   int remote_sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -156,7 +159,7 @@ void on_connect(struct sock_info* identifier, int (*relay_send)(), int (*relay_c
   ev_io_start(default_loop, &((proxy->write_io).io));
 }
 
-void on_recv(struct sock_info* identifier, char* data, size_t* length, int (*relay_send)(), int (*relay_close)()) {
+void on_recv(struct sock_info* identifier, char* data, size_t* length) {
   //printf("on_recv() invoked.\n");
   struct proxy_wrap* proxy = (struct proxy_wrap*)(identifier->data);
   size_t ret;
@@ -189,7 +192,7 @@ void on_recv(struct sock_info* identifier, char* data, size_t* length, int (*rel
   }
 }
 
-void on_send(struct sock_info* identifier, char* data, size_t* length, int (*relay_send)(), int (*relay_close)()) {
+void on_send(struct sock_info* identifier, char* data, size_t* length) {
   //printf("on_send() invoked.\n");
 }
 
@@ -207,4 +210,7 @@ void on_close(struct sock_info* identifier) {
 
 void on_init(struct init_info* info) {
   default_loop = info->default_loop;
+
+  relay_send = info->relay_send;
+  relay_close = info->relay_close;
 }

@@ -40,7 +40,7 @@ int relay_send_func(struct sock_info* identifier, const void *buffer, size_t len
 
   //Apply on_send() on all plugins
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    (*(loaded_plugins[plugin_index].on_send))(&(relay->plugin_socks[plugin_index]), buffer, &length, relay_send_func, relay_close_func);
+    (*(loaded_plugins[plugin_index].on_send))(&(relay->plugin_socks[plugin_index]), buffer, &length);
   }
 
 
@@ -249,6 +249,8 @@ int main() {
     struct init_info* hook_init_info = (struct init_info*)malloc(sizeof(struct init_info));
     hook_init_info->default_loop = loop;
     hook_init_info->plugin_id = i;
+    hook_init_info->relay_send = relay_send_func;
+    hook_init_info->relay_close = relay_close_func;
     (*((loaded_plugins[i]).on_init))(hook_init_info);
   }
 
@@ -310,7 +312,7 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
   //Apply on_connect() on all plugins
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    (*(loaded_plugins[plugin_index].on_connect))(&(relay->plugin_socks[plugin_index]), relay_send_func, relay_close_func);
+    (*(loaded_plugins[plugin_index].on_connect))(&(relay->plugin_socks[plugin_index]));
   }
 
   struct ev_io *w_client_read = &((relay->read_io_wrap).io);
@@ -387,7 +389,7 @@ void read_cb(struct ev_loop *loop, struct ev_io *w_, int revents){
 
   //Apply on_recv() on all plugins
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    (*(loaded_plugins[plugin_index].on_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), buffer, &read, relay_send_func, relay_close_func);
+    (*(loaded_plugins[plugin_index].on_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), buffer, &read);
   }
 
 }
