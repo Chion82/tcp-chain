@@ -199,32 +199,14 @@ void load_plugins() {
   closedir(plugin_d);
 }
 
-
-int main() {
-
-  load_plugins();
-
-  for (int i=0; i<MAX_RELAYS; i++) {
-    relays[i].active = 0;
-  }
-
-  loop = ev_default_loop(0);
+int init_server_socket() {
+  // Create server socket
   int sd;
   struct sockaddr_in addr;
-  int addr_len = sizeof(addr);
-  struct ev_io w_accept;
-  
 
-  for (int i=0; i<plugin_count; i++) {
-    struct init_info* hook_init_info = (struct init_info*)malloc(sizeof(struct init_info));
-    hook_init_info->default_loop = loop;
-    hook_init_info->plugin_id = i;
-    (*((loaded_plugins[i]).on_init))(hook_init_info);
-  }
-
-  // Create server socket
   if( (sd = socket(PF_INET, SOCK_STREAM, 0)) < 0 ) {
     perror("socket error");
+    exit(-1);
     return -1;
   }
 
@@ -236,14 +218,41 @@ int main() {
   // Bind socket to address
   if (bind(sd, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
     perror("bind error");
+    exit(-1);
     return -1;
   }
 
   // Start listing on the socket
   if (listen(sd, 2) < 0) {
     perror("listen error");
+    exit(-1);
     return -1;
   }
+
+  return sd;
+}
+
+
+int main() {
+
+  load_plugins();
+
+  for (int i=0; i<MAX_RELAYS; i++) {
+    relays[i].active = 0;
+  }
+
+  loop = ev_default_loop(0);
+  int sd;
+  struct ev_io w_accept;
+  
+  for (int i=0; i<plugin_count; i++) {
+    struct init_info* hook_init_info = (struct init_info*)malloc(sizeof(struct init_info));
+    hook_init_info->default_loop = loop;
+    hook_init_info->plugin_id = i;
+    (*((loaded_plugins[i]).on_init))(hook_init_info);
+  }
+
+  sd = init_server_socket();
 
   // Initialize and start a watcher to accepts client requests
   ev_io_init(&w_accept, accept_cb, sd, EV_READ);

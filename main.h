@@ -35,6 +35,7 @@ struct plugin_hooks {
 };
 
 void load_plugins();
+int init_server_socket();
 
 int init_relay(int sock_fd, struct sockaddr* src_addr, struct sockaddr* dst_addr);
 void close_relay(int relay_id);
