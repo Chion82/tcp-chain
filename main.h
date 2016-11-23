@@ -18,8 +18,12 @@ struct relay_info {
   struct sockaddr_in src_addr;
   struct sockaddr_in dst_addr;
   int takeovered;
-  struct relay_wrap io_wrap;
+  struct relay_wrap read_io_wrap;
+  struct relay_wrap write_io_wrap;
   struct sock_info plugin_socks[MAX_PLUGINS];
+  char* pending_send_data;
+  size_t pending_send_data_len;
+  size_t pending_send_data_buf_len;
 };
 
 struct plugin_hooks {
@@ -37,3 +41,4 @@ void close_relay(int relay_id);
 
 void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents);
 void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents);
+void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents);

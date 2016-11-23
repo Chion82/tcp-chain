@@ -10,6 +10,8 @@
 #include <ev.h>
 #include <dirent.h>
 #include <dlfcn.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #include "main.h"
 
@@ -25,6 +27,14 @@ struct relay_info relays[MAX_RELAYS];
 
 struct ev_loop* loop;
 
+int setnonblocking(int fd) {
+  int flags;
+  if (-1 == (flags = fcntl(fd, F_GETFL, 0))) {
+    flags = 0;
+  }
+  return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
 int relay_send_func(struct sock_info* identifier, const void *buffer, size_t length, int flags) {
   struct relay_info* relay = &(relays[identifier->relay_id]);
 
@@ -33,16 +43,45 @@ int relay_send_func(struct sock_info* identifier, const void *buffer, size_t len
     (*(loaded_plugins[plugin_index].on_send))(&(relay->plugin_socks[plugin_index]), buffer, &length, relay_send_func, relay_close_func);
   }
 
-  int ret = send(relay->sock_fd, buffer, length, flags);
-  if (ret < 0) {
-    ev_io_stop(loop, &((relay->io_wrap).io));
-    relay_close_func(&((relay->plugin_socks)[0]));
+
+  size_t ret;
+
+  if (relay->pending_send_data_len > 0) {
+    ret = 0;
+  } else {
+    ret = send(relay->sock_fd, buffer, length, flags);
+    if (ret == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+      relay_close_func(identifier);
+      return ret;
+    }
   }
-  return ret;
+
+  if (ret == -1) {
+    ret = 0;
+  }
+
+  if (ret < length) {
+    if (relay->pending_send_data_len + (length-ret) > relay->pending_send_data_buf_len) {
+      relay->pending_send_data = (char*)realloc(relay->pending_send_data, relay->pending_send_data_len + (length-ret));
+      relay->pending_send_data_buf_len = relay->pending_send_data_len + (length-ret);
+    }
+
+    memcpy(relay->pending_send_data + relay->pending_send_data_len, buffer + ret, length-ret);
+
+    relay->pending_send_data_len += (length - ret);
+
+    ev_io_start(loop, &((relay->write_io_wrap).io));
+  }
+
+  return length;
 }
 
 int relay_close_func(struct sock_info* identifier) {
   struct relay_info* relay = &(relays[identifier->relay_id]);
+
+  if (!(relay->active)) {
+    return -1;
+  }
 
   //Apply on_close() on all plugins
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
@@ -50,14 +89,15 @@ int relay_close_func(struct sock_info* identifier) {
 
   }
 
-  ev_io_stop(loop, &((relay->io_wrap).io));
+  ev_io_stop(loop, &((relay->read_io_wrap).io));
+  ev_io_stop(loop, &((relay->write_io_wrap).io));
   int ret = close(relay->sock_fd);
   
   total_clients --;
   close_relay(identifier->relay_id);
 
-  printf("Client closed.\n");
-  printf("%d client(s) connected.\n", total_clients);
+  printf("main: Closing client.\n");
+  printf("main: %d client(s) connected.\n", total_clients);
 
   return ret;
 }
@@ -93,7 +133,12 @@ int init_relay(int sock_fd, struct sockaddr* src_addr, struct sockaddr* dst_addr
     (relay->plugin_socks)[i].dst_addr = (struct sockaddr*) &(relay->dst_addr);
     (relay->plugin_socks)[i].takeovered = &(relay->takeovered);
   }
-  (relay->io_wrap).relay = relay;
+  (relay->read_io_wrap).relay = relay;
+  (relay->write_io_wrap).relay = relay;
+
+  relay->pending_send_data = (char*)malloc(BUFFER_SIZE);
+  relay->pending_send_data_len = 0;
+  relay->pending_send_data_buf_len = BUFFER_SIZE;
 
   return relay_index;
 }
@@ -101,6 +146,7 @@ int init_relay(int sock_fd, struct sockaddr* src_addr, struct sockaddr* dst_addr
 void close_relay(int relay_id) {
   relays[relay_id].active = 0;
   free(relays[relay_id].shared_data);
+  free(relays[relay_id].pending_send_data);
 }
 
 void load_plugins() {
@@ -204,7 +250,7 @@ int main() {
   ev_io_start(loop, &w_accept);
 
   // Start infinite loop
-  ev_loop(loop, 0);
+  ev_run(loop, 0);
 
   return 0;
 }
@@ -222,14 +268,16 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
   // Accept client request
   client_fd = accept(watcher->fd, (struct sockaddr *)&client_addr, &client_len);
 
+  setnonblocking(client_fd);
+
   if (client_fd < 0) {
     perror("accept error");
     return;
   }
 
   total_clients ++; // Increment total_clients count
-  printf("Client connected.\n");
-  printf("%d client(s) connected.\n", total_clients);
+  printf("main: Client connected.\n");
+  printf("main: %d client(s) connected.\n", total_clients);
 
   //Get original destination address from accepted socket
   int sockaddr_len = sizeof(original_dst_addr);
@@ -256,9 +304,50 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
     (*(loaded_plugins[plugin_index].on_connect))(&(relay->plugin_socks[plugin_index]), relay_send_func, relay_close_func);
   }
 
-  struct ev_io *w_client = &((relay->io_wrap).io);
-  ev_io_init(w_client, read_cb, client_fd, EV_READ);
-  ev_io_start(EV_A_ w_client);
+  struct ev_io *w_client_read = &((relay->read_io_wrap).io);
+  struct ev_io *w_client_write = &((relay->write_io_wrap).io);
+  ev_io_init(w_client_read, read_cb, client_fd, EV_READ);
+  ev_io_init(w_client_write, write_cb, client_fd, EV_WRITE);
+  ev_io_start(EV_A_ w_client_read);
+  //ev_io_start(EV_A_ w_client_write);
+}
+
+void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
+  ssize_t read;
+  struct relay_wrap* io_wrap = (struct relay_wrap*)w_;
+  struct ev_io* watcher = &(io_wrap->io);
+  struct relay_info* relay = io_wrap->relay;
+
+  if(EV_ERROR & revents) {
+    return;
+  }
+
+  if (relay->pending_send_data_len <= 0) {
+    //ev_io_stop(loop, watcher);
+    return;
+  }
+
+  size_t bytes_sent = send(watcher->fd, relay->pending_send_data, relay->pending_send_data_len, 0);
+
+  if (bytes_sent == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+    //ev_io_stop(loop, watcher);
+    printf("main: Sock send error.\n");
+    relay_close_func(&(((io_wrap->relay)->plugin_socks)[0])); 
+    return;
+  }
+
+  if (bytes_sent == -1) {
+    return;
+  }
+
+  if (bytes_sent < relay->pending_send_data_len) {
+    memmove(relay->pending_send_data, relay->pending_send_data + bytes_sent, relay->pending_send_data_len - bytes_sent);
+    relay->pending_send_data_len -= bytes_sent;
+  } else {
+    relay->pending_send_data_len = 0;
+    ev_io_stop(loop, watcher);
+  }
+
 }
 
 void read_cb(struct ev_loop *loop, struct ev_io *w_, int revents){
@@ -276,9 +365,14 @@ void read_cb(struct ev_loop *loop, struct ev_io *w_, int revents){
   // Receive message from client socket
   read = recv(watcher->fd, buffer, BUFFER_SIZE, 0);
 
-  if(read <= 0) {
+  if((read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) || read == 0) {
+    printf("main: Client closed.\n");
     ev_io_stop(loop, watcher);
     relay_close_func(&(((io_wrap->relay)->plugin_socks)[0])); 
+    return;
+  }
+
+  if (read == -1) {
     return;
   }
 
