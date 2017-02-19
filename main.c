@@ -229,6 +229,8 @@ int init_server_socket() {
     return -1;
   }
 
+  setnonblocking(sd);
+
   return sd;
 }
 
@@ -280,6 +282,7 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
   client_fd = accept(watcher->fd, (struct sockaddr *)&client_addr, &client_len);
 
   setnonblocking(client_fd);
+  setnonblocking(watcher->fd);
 
   if (client_fd < 0) {
     perror("accept error");
@@ -320,7 +323,7 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
   ev_io_init(w_client_read, read_cb, client_fd, EV_READ);
   ev_io_init(w_client_write, write_cb, client_fd, EV_WRITE);
   ev_io_start(EV_A_ w_client_read);
-  //ev_io_start(EV_A_ w_client_write);
+  ev_io_start(EV_A_ w_client_write);
 }
 
 void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
@@ -334,7 +337,7 @@ void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
   }
 
   if (relay->pending_send_data_len <= 0) {
-    //ev_io_stop(loop, watcher);
+    ev_io_stop(loop, watcher);
     return;
   }
 

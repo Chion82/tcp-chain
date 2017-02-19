@@ -85,7 +85,7 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
   int remote_fd = io->fd;
 
   if (proxy->pending_send_data_len <= 0) {
-    //ev_io_stop(loop, io);
+    ev_io_stop(loop, io);
     return;
   }
 
