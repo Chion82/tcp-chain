@@ -71,6 +71,11 @@ int relay_send_func(struct sock_info* identifier, const void *buffer, size_t len
     relay->pending_send_data_len += (length - ret);
 
     ev_io_start(loop, &((relay->write_io_wrap).io));
+
+    //Apply pause_remote_recv() on all plugins
+    for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
+      (*(loaded_plugins[plugin_index].pause_remote_recv))(&((relay->plugin_socks)[plugin_index]), 1);
+    }
   }
 
   return length;
@@ -102,6 +107,15 @@ int relay_close_func(struct sock_info* identifier) {
   return ret;
 }
 
+void relay_pause_recv_func(struct sock_info* identifier, int pause) {
+  struct relay_info* relay = &(relays[identifier->relay_id]);
+
+  if (pause) {
+    ev_io_stop(loop, &((relay->read_io_wrap).io));
+  } else {
+    ev_io_start(loop, &((relay->read_io_wrap).io));
+  }
+}
 
 int init_relay(int sock_fd, struct sockaddr* src_addr, struct sockaddr* dst_addr) {
   int free_relay_founded = 0;
@@ -188,6 +202,7 @@ void load_plugins() {
       plugin.on_recv = dlsym(module, "on_recv");
       plugin.on_close = dlsym(module, "on_close");
       plugin.on_init = dlsym(module, "on_init");
+      plugin.pause_remote_recv = dlsym(module, "pause_remote_recv");
       if (error = dlerror()) {
         printf("Plugin symbol not found. %s\n", error);
         continue;
@@ -253,6 +268,7 @@ int main() {
     hook_init_info->plugin_id = i;
     hook_init_info->relay_send = relay_send_func;
     hook_init_info->relay_close = relay_close_func;
+    hook_init_info->relay_pause_recv = relay_pause_recv_func;
     (*((loaded_plugins[i]).on_init))(hook_init_info);
   }
 
@@ -359,6 +375,10 @@ void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
     relay->pending_send_data_len -= bytes_sent;
   } else {
     relay->pending_send_data_len = 0;
+    //Apply pause_remote_recv() on all plugins
+    for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
+      (*(loaded_plugins[plugin_index].pause_remote_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), 0);
+    }
     ev_io_stop(loop, watcher);
   }
 

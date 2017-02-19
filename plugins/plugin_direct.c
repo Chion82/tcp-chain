@@ -34,6 +34,7 @@ struct ev_loop* default_loop;
 
 int (*relay_send)();
 int (*relay_close)();
+void (*relay_pause_recv)();
 
 int setnonblocking(int fd) {
   int flags;
@@ -106,7 +107,8 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
     proxy->pending_send_data_len -= bytes_sent;
   } else {
     proxy->pending_send_data_len = 0;
-    ev_io_stop(loop, io);
+    relay_pause_recv(proxy->identifier, 0);
+    ev_io_stop(loop, io);    
   }
 
 }
@@ -189,6 +191,8 @@ void on_recv(struct sock_info* identifier, char* data, size_t* length) {
     proxy->pending_send_data_len += (*length - ret);
 
     ev_io_start(default_loop, &((proxy->write_io).io));
+
+    relay_pause_recv(identifier, 1);
   }
 }
 
@@ -213,4 +217,14 @@ void on_init(struct init_info* info) {
 
   relay_send = info->relay_send;
   relay_close = info->relay_close;
+  relay_pause_recv = info->relay_pause_recv;
+}
+
+void pause_remote_recv(struct sock_info* identifier, int pause) {
+  struct proxy_wrap* proxy = (struct proxy_wrap*)(identifier->data);
+  if (pause) {
+    ev_io_stop(default_loop, &((proxy->read_io).io));
+  } else {
+    ev_io_start(default_loop, &((proxy->read_io).io));
+  }
 }

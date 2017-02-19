@@ -32,6 +32,7 @@ struct plugin_hooks {
   void (*on_recv)();
   void (*on_close)();
   void (*on_init)();
+  void (*pause_remote_recv)();
 };
 
 void load_plugins();
