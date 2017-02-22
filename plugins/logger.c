@@ -11,9 +11,14 @@ void on_init(struct init_info* info) {
 void on_connect(struct sock_info* identifier) {
   struct sockaddr_in* src_addr = (struct sockaddr_in*)(identifier->src_addr);
   struct sockaddr_in* dst_addr = (struct sockaddr_in*)(identifier->dst_addr);
+  char src_ip[128], dst_ip[128], *p_temp;
+  p_temp = inet_ntoa(src_addr->sin_addr);
+  strcpy(src_ip, p_temp);
+  p_temp = inet_ntoa(dst_addr->sin_addr);
+  strcpy(dst_ip, p_temp);
   LOG("New connection from %s:%d to %s:%d, relay ID is %d.", 
-    inet_ntoa(src_addr->sin_addr), ntohs(src_addr->sin_port), 
-    inet_ntoa(dst_addr->sin_addr), ntohs(dst_addr->sin_port), 
+    src_ip, ntohs(src_addr->sin_port), 
+    dst_ip, ntohs(dst_addr->sin_port), 
     identifier->relay_id);
 }
 
