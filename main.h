@@ -35,6 +35,7 @@ struct plugin_hooks {
   void (*pause_remote_recv)();
 };
 
+void init_args();
 void load_plugins();
 int init_server_socket();
 

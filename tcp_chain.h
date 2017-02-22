@@ -1,5 +1,7 @@
 #include <netinet/in.h>
 #include <ev.h>
+#include <stdarg.h>
+#include <time.h>
 
 #define BUFFER_SIZE 2048
 
@@ -21,13 +23,26 @@ struct init_info {
   void (*relay_pause_recv)();
 };
 
-int relay_send_func(struct sock_info* identifier, const void *buffer, size_t length, int flags);
+int relay_send_func(struct sock_info* identifier, char *buffer, size_t length, int flags);
 int relay_close_func(struct sock_info* identifier);
 void relay_pause_recv_func(struct sock_info* identifier, int pause);
 
-void on_connect(struct sock_info* identifier);
-void on_recv(struct sock_info* identifier, char* data, size_t* length);
-void on_send(struct sock_info* identifier, char* data, size_t* length);
-void on_close(struct sock_info* identifier);
 void on_init(struct init_info* info);
+void on_connect(struct sock_info* identifier);
+void on_recv(struct sock_info* identifier, char** p_data, size_t* length);
+void on_send(struct sock_info* identifier, char** p_data, size_t* length);
+void on_close(struct sock_info* identifier);
 void pause_remote_recv(struct sock_info* identifier, int pause);
+
+void LOG(const char* message, ...) {
+  time_t now = time(NULL);
+  char timestr[20];
+  strftime(timestr, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+  printf("[%s] ", timestr);
+  va_list argptr;
+  va_start(argptr, message);
+  vfprintf(stdout, message, argptr);
+  va_end(argptr);
+  printf("\n");
+  fflush(stdout);
+}

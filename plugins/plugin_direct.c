@@ -55,10 +55,10 @@ void remote_read_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
   struct ev_io* io = &(((struct io_wrap*)w_)->io);
 
   int remote_fd = io->fd;
-  ssize_t read = recv(remote_fd, buffer, BUFFER_SIZE, 0);
+  size_t read = recv(remote_fd, buffer, BUFFER_SIZE, 0);
 
   if ((read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) || read == 0) {
-    printf("direct: Remote closed connection.\n");
+    // printf("direct: Remote closed connection.\n");
     (*(proxy->relay_close))(proxy->identifier);
     return;
   }
@@ -94,8 +94,9 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
 
   if (bytes_sent == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
     //ev_io_stop(loop, io);
-    printf("direct: Remote sock send error.\n");
+    // printf("direct: Remote sock send error.\n");
     (*(proxy->relay_close))(proxy->identifier);
+    return;
   }
 
   if (bytes_sent == -1) {
@@ -133,12 +134,12 @@ void on_connect(struct sock_info* identifier) {
 
   int connect_ret = connect(remote_sock, identifier->dst_addr, sizeof(struct sockaddr));
   if (connect_ret == -1 && errno != EINPROGRESS) {
-    printf("direct: Remote connection failed.\n");
+    // printf("direct: Remote connection failed.\n");
     (*relay_close)(identifier);
     return;
   }
 
-  printf("direct: Remote connected.\n");
+  // printf("direct: Remote connected.\n");
 
   struct proxy_wrap* proxy = (struct proxy_wrap*)malloc(sizeof(struct proxy_wrap));
   proxy->identifier = identifier;
@@ -161,8 +162,9 @@ void on_connect(struct sock_info* identifier) {
   ev_io_start(default_loop, &((proxy->write_io).io));
 }
 
-void on_recv(struct sock_info* identifier, char* data, size_t* length) {
+void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
   //printf("on_recv() invoked.\n");
+  char* data = *p_data;
   struct proxy_wrap* proxy = (struct proxy_wrap*)(identifier->data);
   size_t ret;
   if (proxy->remote_connected && proxy->pending_send_data_len == 0) {
@@ -172,7 +174,7 @@ void on_recv(struct sock_info* identifier, char* data, size_t* length) {
   }
 
   if (ret == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-    printf("direct: Remote closed.\n");
+    // printf("direct: Remote closed.\n");
     (*relay_close)(identifier);
     return;
   }
@@ -196,7 +198,7 @@ void on_recv(struct sock_info* identifier, char* data, size_t* length) {
   }
 }
 
-void on_send(struct sock_info* identifier, char* data, size_t* length) {
+void on_send(struct sock_info* identifier, char** p_data, size_t* length) {
   //printf("on_send() invoked.\n");
 }
 
