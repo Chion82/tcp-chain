@@ -346,13 +346,13 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
   // Accept client request
   client_fd = accept(watcher->fd, (struct sockaddr *)&client_addr, &client_len);
 
-  setnonblocking(client_fd);
-  setnonblocking(watcher->fd);
-
   if (client_fd < 0) {
     perror("accept error");
     return;
   }
+
+  setnonblocking(client_fd);
+  setnonblocking(watcher->fd);
 
   total_clients ++; // Increment total_clients count
   // printf("main: Client connected.\n");
