@@ -20,8 +20,6 @@ struct io_wrap {
 
 struct proxy_wrap {
   struct sock_info* identifier;
-  int (*relay_send)();
-  int (*relay_close)();
   char* pending_send_data;
   size_t pending_send_data_len;
   size_t pending_send_data_buf_len;
@@ -59,7 +57,7 @@ void remote_read_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
 
   if ((read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) || read == 0) {
     // printf("direct: Remote closed connection.\n");
-    (*(proxy->relay_close))(proxy->identifier);
+    (*relay_close)(proxy->identifier);
     return;
   }
 
@@ -67,8 +65,8 @@ void remote_read_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
     return;
   }
 
-  if ((*(proxy->relay_send))(proxy->identifier, buffer, read, 0) == -1) {
-    (*(proxy->relay_close))(proxy->identifier);
+  if ((*relay_send)(proxy->identifier, buffer, read, 0) == -1) {
+    (*relay_close)(proxy->identifier);
   }
 
 }
@@ -95,7 +93,7 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
   if (bytes_sent == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
     //ev_io_stop(loop, io);
     // printf("direct: Remote sock send error.\n");
-    (*(proxy->relay_close))(proxy->identifier);
+    (*relay_close)(proxy->identifier);
     return;
   }
 
@@ -116,6 +114,10 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
 
 void on_connect(struct sock_info* identifier) {
   //printf("on_connect() invoked.\n");
+  if (*(identifier->takeovered)) {
+    return;
+  }
+
   int remote_sock = socket(AF_INET, SOCK_STREAM, 0);
 
   int sock_mark = 100;
@@ -143,8 +145,6 @@ void on_connect(struct sock_info* identifier) {
 
   struct proxy_wrap* proxy = (struct proxy_wrap*)malloc(sizeof(struct proxy_wrap));
   proxy->identifier = identifier;
-  proxy->relay_send = relay_send;
-  proxy->relay_close = relay_close;
   proxy->pending_send_data = (char*)malloc(BUFFER_SIZE);
   proxy->pending_send_data_len = 0;
   proxy->pending_send_data_buf_len = BUFFER_SIZE;
@@ -166,6 +166,11 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
   //printf("on_recv() invoked.\n");
   char* data = *p_data;
   struct proxy_wrap* proxy = (struct proxy_wrap*)(identifier->data);
+
+  if (proxy == NULL) {
+    return;
+  }
+
   size_t ret;
   if (proxy->remote_connected && proxy->pending_send_data_len == 0) {
     ret = send((proxy->write_io).io.fd, data, *length, 0);
