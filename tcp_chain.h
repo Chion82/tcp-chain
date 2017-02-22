@@ -21,6 +21,8 @@ struct init_info {
   int (*relay_send)();
   int (*relay_close)();
   void (*relay_pause_recv)();
+  int argc;
+  char** argv;
 };
 
 int relay_send_func(struct sock_info* identifier, char *buffer, size_t length, int flags);

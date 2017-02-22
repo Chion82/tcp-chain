@@ -13,6 +13,8 @@
 
 #include "../tcp_chain.h"
 
+int SO_MARK_VALUE = 100;
+
 struct io_wrap {
   ev_io io;
   struct proxy_wrap* proxy;
@@ -120,7 +122,7 @@ void on_connect(struct sock_info* identifier) {
 
   int remote_sock = socket(AF_INET, SOCK_STREAM, 0);
 
-  int sock_mark = 100;
+  int sock_mark = SO_MARK_VALUE;
   setsockopt(remote_sock, SOL_SOCKET, SO_MARK, &sock_mark, sizeof(sock_mark));
 
   int keep_alive = 1;
@@ -225,6 +227,17 @@ void on_init(struct init_info* info) {
   relay_send = info->relay_send;
   relay_close = info->relay_close;
   relay_pause_recv = info->relay_pause_recv;
+
+  int argc = info->argc;
+  char** argv = info->argv;
+
+  for (int i = 0; i < argc; i++) {
+    if (i != argc - 1 && (!strcmp(argv[i], "--direct-mark"))) {
+      SO_MARK_VALUE = atoi(argv[i + 1]);
+    }
+  }
+
+  LOG("Direct mark is %d", SO_MARK_VALUE);
 }
 
 void pause_remote_recv(struct sock_info* identifier, int pause) {

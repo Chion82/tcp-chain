@@ -316,6 +316,8 @@ int main(int argc, char* argv[]) {
     hook_init_info->relay_send = relay_send_func;
     hook_init_info->relay_close = relay_close_func;
     hook_init_info->relay_pause_recv = relay_pause_recv_func;
+    hook_init_info->argc = argc;
+    hook_init_info->argv = argv;
     (*((loaded_plugins[i]).on_init))(hook_init_info);
   }
 
