@@ -54,10 +54,10 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
 }
 ```
 函数传入参数定义：
-    * `struct sock_info* identifier` 同上，标识该TCP连接的信息
-    * `char** p_data` 指向接收数据缓冲区指针的指针（注意是指针的指针）
-    * `size_t* length` 指向接收数据长度的指针  
-    具体注意事项请参考API文档
+* `struct sock_info* identifier` 同上，标识该TCP连接的信息
+* `char** p_data` 指向接收数据缓冲区指针的指针（注意是指针的指针）
+* `size_t* length` 指向接收数据长度的指针  
+具体注意事项请参考API文档
 
 6\. 定义并实现`on_send()`钩子函数，该函数在TCP连接发送数据前被回调。函数传入参数同`on_recv()`：
 ```C
@@ -76,17 +76,19 @@ void on_close(struct sock_info* identifier) {
 8\. **非代理型插件请忽略** 代理插件需要响应主程序的节流请求，实现`pause_remote_recv()`方法，在该方法中暂停远端连接的`recv()`操作。
 
 9\. 其他主动行为操作（详见API文档）：
-    * `relay_send()` 主动发送数据。
-    * `relay_close()` 主动关闭TCP连接。
-    * `relay_pause_recv()` 暂停主程序在该TCP连接的`recv()`操作（用于代理型插件进行节流）
+
+* `relay_send()` 主动发送数据。
+* `relay_close()` 主动关闭TCP连接。
+* `relay_pause_recv()` 暂停主程序在该TCP连接的`recv()`操作（用于代理型插件进行节流）
 
 10\. 编译插件：
-    * 在`plugins/Makefile`最后新增两行：
-    ```
-    ${CC} -fPIC -c hello_plugin.c
-    ${CC} -shared logger.o -o 90-hello_plugin.so
-    ```
-    其中，`90-hello_plugin.so`为编译后的插件文件，文件名以数字`XX-`开头，该数字代表插件优先级，数字越小优先级越大，必须为2位数，如`01-pre_processor.so`。
-    * 在`plugins`目录下运行`make build`编译插件，或在项目根目录下运行`make`编译主程序和全部插件。
+* 在`plugins/Makefile`最后新增两行：
+```
+${CC} -fPIC -c hello_plugin.c
+${CC} -shared logger.o -o 90-hello_plugin.so
+```
+
+其中，`90-hello_plugin.so`为编译后的插件文件，文件名以数字`XX-`开头，该数字代表插件优先级，数字越小优先级越大，必须为2位数，如`01-pre_processor.so`。
+* 在`plugins`目录下运行`make build`编译插件，或在项目根目录下运行`make`编译主程序和全部插件。
 
 11\. 运行`tcp_chain`主程序即可自动加载插件。
