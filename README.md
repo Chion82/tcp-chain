@@ -2,6 +2,8 @@ TCP Chain
 ---------
 TCP Chain是一个可拓展、高性能的TCP网络钩子框架（中间件）。通过使用框架提供的API开发插件，可快速实现自定义网络钩子或代理程序。
 
+[插件开发指南](./docs/plugin_dev_guide.md)
+
 * 使用C语言开发，支持Linux平台
 * 转发性能高，默认透明代理loopback速率超过400MB/s
 * 拓展性强，插件API友好
@@ -18,7 +20,7 @@ TCP Chain是一个可拓展、高性能的TCP网络钩子框架（中间件）�
 * 加密隧道转发策略
 * ...
 
-安装和配置
+编译和使用
 --------
 * 编译依赖：`libev-devel`（部分发行版package名为`libevdev`或`libev-dev`）
 * 编译：
