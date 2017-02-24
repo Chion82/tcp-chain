@@ -41,7 +41,7 @@ struct sock_info {
   int plugin_id;              //插件ID
   int* takeovered;            //若 *takeovered==1，表明该连接已被其他插件“最终处理”（代理/转发）
   void* data;                 //用户指针，默认值为NULL，可修改data的指向来关联该TCP连接的自定义数据
-  void* shared_data;          //指向一块公共缓存区，大小为2048字节，用于在多个插件之间共享数据。除非realloc()调用，请勿修改shared_data的指向（待进一步讨论）
+  void* shared_data;          //指向一块公共缓存区，大小为2048字节，用于在多个插件之间共享数据（公共缓冲区spec约定有待讨论）。除非realloc()调用，请勿修改shared_data的指向
   struct sockaddr* src_addr;  //TCP连接的原地址
   struct sockaddr* dst_addr;  //TCP连接的目的地址
 };
@@ -55,7 +55,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
 ```
 函数传入参数定义：
 * `struct sock_info* identifier` 同上，标识该TCP连接的信息
-* `char** p_data` 指向接收数据缓冲区指针的指针（注意是指针的指针）
+* `char** p_data` 指向接收数据缓冲区指针的指针（注意是指针的指针）**除非`realloc()`调用，请勿修改`*p_data`的指向**
 * `size_t* length` 指向接收数据长度的指针  
 具体注意事项请参考API文档
 
