@@ -85,7 +85,7 @@ void on_close(struct sock_info* identifier) {
 * 在`plugins/Makefile`最后新增两行：
 ```
 ${CC} -fPIC -c hello_plugin.c
-${CC} -shared logger.o -o 90-hello_plugin.so
+${CC} -shared hello_plugin.o -o 90-hello_plugin.so
 ```
 
 其中，`90-hello_plugin.so`为编译后的插件文件，文件名以数字`XX-`开头，该数字代表插件优先级，数字越小优先级越大，必须为2位数，如`01-pre_processor.so`。
