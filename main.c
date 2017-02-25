@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <signal.h>
 
 #include "main.h"
 
@@ -296,6 +297,8 @@ void init_args(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
+
+  signal(SIGPIPE, SIG_IGN);
 
   init_args(argc, argv);
 

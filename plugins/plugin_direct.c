@@ -67,9 +67,7 @@ void remote_read_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
     return;
   }
 
-  if ((*relay_send)(proxy->identifier, buffer, read, 0) == -1) {
-    (*relay_close)(proxy->identifier);
-  }
+  (*relay_send)(proxy->identifier, buffer, read, 0);
 
 }
 
@@ -108,7 +106,7 @@ void remote_write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
     proxy->pending_send_data_len -= bytes_sent;
   } else {
     proxy->pending_send_data_len = 0;
-    relay_pause_recv(proxy->identifier, 0);
+    (*relay_pause_recv)(proxy->identifier, 0);
     ev_io_stop(loop, io);    
   }
 
@@ -201,7 +199,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
 
     ev_io_start(default_loop, &((proxy->write_io).io));
 
-    relay_pause_recv(identifier, 1);
+    (*relay_pause_recv)(identifier, 1);
   }
 }
 
