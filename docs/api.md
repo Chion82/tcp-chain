@@ -129,6 +129,7 @@ TCP Chain API文档
 
 * 避免使用多线程/进程。
 * 使用非阻塞IO，推荐配合libev，使用`struct init_info`提供的`default_loop`作为IO loop和timer loop。
+* 代理型插件在执行代理前应判断`*(identifier->takeovered)`是否为`1`，若为`1`则表明该TCP连接已被其它代理型插件接手而本插件无需执行代理；否则将该值置为`1`后再执行代理。
 * 宏`BUFFER_SIZE`定义为`2048`，指示单次收发数据的缓冲区容量。
 * TCP是基于stream的，对于需要识别收发payload的插件，要在每次`on_recv/send()`回调中对收发buffer的数据进行增量缓存。
 * 插件间共享缓冲区`identifier->shared_data`，格式约定暂未确定，有待讨论。
