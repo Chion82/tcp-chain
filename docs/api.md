@@ -89,7 +89,7 @@ TCP Chain API文档
   * 返回值：
     - 成功返回`0`，否则返回`-1`
 
-* `void relay_pause_recv_func(struct sock_info* identifier, int pause)`
+* `void relay_pause_recv(struct sock_info* identifier, int pause)`
   * 用于代理型插件请求主程序节流（窗口控制）。
   * 参数：
     - `struct sock_info* identifier` TCP连接标识信息
