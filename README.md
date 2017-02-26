@@ -36,9 +36,9 @@ $ make
 # iptables -t nat -A OUTPUT -p tcp -d [主机IP] --dport [服务端口] -m mark ! --mark 100 -j REDIRECT --to-port 3033
 ```
 
-* 运行`tcp-chain`（需要`sudo`或在root下运行）：
+* 运行`tcp_chain`（需要`sudo`或在root下运行）：
 ```
-# ./tcp-chain
+# ./tcp_chain
 ```
 
 ### 可选运行参数
