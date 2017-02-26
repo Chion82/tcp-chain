@@ -1,6 +1,7 @@
 TCP Chain插件开发快速指南
 -----------------------
 > 你可以参考 [Logger示例插件](../plugins/logger.c) 的源码快速上手。
+> [API文档](./api.md)
 
 1\. 在`plugins`目录下新建`hello_plugin.c`。
 
@@ -18,13 +19,13 @@ void on_init(struct init_info* info) {
 `on_init()`被回调时会传入一个`struct init_info`结构，包含了插件初始化时所需要的信息，定义如下：
 ```C
 struct init_info {
-  struct ev_loop* default_loop;  //libev的默认loop
-  int plugin_id;                 //插件ID
-  int (*relay_send)();           //relay_send()的函数指针（见API文档）
-  int (*relay_close)();          //relay_close()的函数指针
-  void (*relay_pause_recv)();    //relay_pause_recv()的函数指针
-  int argc;                      //main()传入的int argc
-  char** argv;                   //main()传入的char* argv[]
+  struct ev_loop* default_loop;  //[readonly] libev的默认loop
+  int plugin_id;                 //[readonly] 插件ID
+  int (*relay_send)();           //[readonly] relay_send()的函数指针（见API文档）
+  int (*relay_close)();          //[readonly] relay_close()的函数指针
+  void (*relay_pause_recv)();    //[readonly] relay_pause_recv()的函数指针
+  int argc;                      //[readonly] main()传入的int argc
+  char** argv;                   //[readonly] main()传入的char* argv[]
 };
 ```
 
@@ -37,13 +38,13 @@ void on_connect(struct sock_info* identifier) {
 其中，传入的`struct sock_info`结构包含了标识每个TCP连接的信息，定义如下：
 ```C
 struct sock_info {
-  int relay_id;               //标识该TCP连接的ID（注意不是唯一的ID，在该TCP连接关闭后，该ID的值会被复用）
-  int plugin_id;              //插件ID
+  int relay_id;               //[readonly] 标识该TCP连接的ID（注意不是唯一的ID，在该TCP连接关闭后，该ID的值会被复用）
+  int plugin_id;              //[readonly] 插件ID
   int* takeovered;            //若 *takeovered==1，表明该连接已被其他插件“最终处理”（代理/转发）
   void* data;                 //用户指针，默认值为NULL，可修改data的指向来关联该TCP连接的自定义数据
-  void* shared_data;          //指向一块公共缓存区，大小为2048字节，用于在多个插件之间共享数据（公共缓冲区spec约定有待讨论）。除非realloc()调用，请勿修改shared_data的指向
-  struct sockaddr* src_addr;  //TCP连接的原地址
-  struct sockaddr* dst_addr;  //TCP连接的目的地址
+  void* shared_data;          //[readonly] 指向一块公共缓存区，大小为2048字节，用于在多个插件之间共享数据（公共缓冲区spec约定有待讨论）。
+  struct sockaddr* src_addr;  //[readonly] TCP连接的原地址
+  struct sockaddr* dst_addr;  //[readonly] TCP连接的目的地址
 };
 ```
 
@@ -59,7 +60,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
 * `size_t* length` 指向接收数据长度的指针  
 具体注意事项请参考API文档
 
-6\. 定义并实现`on_send()`钩子函数，该函数在TCP连接发送数据前被回调。函数传入参数同`on_recv()`：
+6\. 定义并实现`on_send()`钩子函数，该函数在TCP连接发送数据时被回调。函数传入参数同`on_recv()`：
 ```C
 void on_send(struct sock_info* identifier, char** p_data, size_t* length) {
   LOG("Connection %d sent %d bytes", identifier->relay_id, *length);
