@@ -47,7 +47,9 @@ int relay_send_func(struct sock_info* identifier, char *buffer, size_t length, i
   char** p_buffer = &send_buffer;
   size_t *p_length = &length;
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    (*(loaded_plugins[plugin_index].on_send))(&(relay->plugin_socks[plugin_index]), p_buffer, p_length);
+    if (relay->active) {
+      (*(loaded_plugins[plugin_index].on_send))(&(relay->plugin_socks[plugin_index]), p_buffer, p_length);
+    }
   }
 
   buffer = *p_buffer;
@@ -83,9 +85,7 @@ int relay_send_func(struct sock_info* identifier, char *buffer, size_t length, i
 
     //Apply pause_remote_recv() on all plugins
     for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-      if (relay->active) {
-        (*(loaded_plugins[plugin_index].pause_remote_recv))(&((relay->plugin_socks)[plugin_index]), 1);
-      }
+      (*(loaded_plugins[plugin_index].pause_remote_recv))(&((relay->plugin_socks)[plugin_index]), 1);
     }
   }
 
