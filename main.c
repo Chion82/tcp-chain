@@ -387,6 +387,13 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
   struct relay_info* relay = &(relays[relay_id]);
 
+  struct ev_io *w_client_read = &((relay->read_io_wrap).io);
+  struct ev_io *w_client_write = &((relay->write_io_wrap).io);
+  ev_io_init(w_client_read, read_cb, client_fd, EV_READ);
+  ev_io_init(w_client_write, write_cb, client_fd, EV_WRITE);
+  ev_io_start(EV_A_ w_client_read);
+  ev_io_start(EV_A_ w_client_write);
+
   //Apply on_connect() on all plugins
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
     if (relay->active) {
@@ -394,12 +401,6 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
     }
   }
 
-  struct ev_io *w_client_read = &((relay->read_io_wrap).io);
-  struct ev_io *w_client_write = &((relay->write_io_wrap).io);
-  ev_io_init(w_client_read, read_cb, client_fd, EV_READ);
-  ev_io_init(w_client_write, write_cb, client_fd, EV_WRITE);
-  ev_io_start(EV_A_ w_client_read);
-  ev_io_start(EV_A_ w_client_write);
 }
 
 void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
