@@ -83,7 +83,9 @@ int relay_send_func(struct sock_info* identifier, char *buffer, size_t length, i
 
     //Apply pause_remote_recv() on all plugins
     for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-      (*(loaded_plugins[plugin_index].pause_remote_recv))(&((relay->plugin_socks)[plugin_index]), 1);
+      if (relay->active) {
+        (*(loaded_plugins[plugin_index].pause_remote_recv))(&((relay->plugin_socks)[plugin_index]), 1);
+      }
     }
   }
 
@@ -175,6 +177,8 @@ void close_relay(int relay_id) {
   relays[relay_id].active = 0;
   free(relays[relay_id].shared_data);
   free(relays[relay_id].pending_send_data);
+  relays[relay_id].shared_data = NULL;
+  relays[relay_id].pending_send_data = NULL;
 }
 
 static inline int alpha_cmp(const void *p1, const void *p2) {
@@ -385,7 +389,9 @@ void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
   //Apply on_connect() on all plugins
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    (*(loaded_plugins[plugin_index].on_connect))(&(relay->plugin_socks[plugin_index]));
+    if (relay->active) {
+      (*(loaded_plugins[plugin_index].on_connect))(&(relay->plugin_socks[plugin_index]));
+    }
   }
 
   struct ev_io *w_client_read = &((relay->read_io_wrap).io);
@@ -471,7 +477,9 @@ void read_cb(struct ev_loop *loop, struct ev_io *w_, int revents){
   char** p_buffer = &buffer;
   size_t* p_length = &read;
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    (*(loaded_plugins[plugin_index].on_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), p_buffer, p_length);
+    if ((io_wrap->relay)->active) {
+      (*(loaded_plugins[plugin_index].on_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), p_buffer, p_length);
+    }
   }
 
   free(*p_buffer);
