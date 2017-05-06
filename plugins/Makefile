@@ -6,3 +6,7 @@ build:
 
 	${CC} -fPIC -c logger.c
 	${CC} -shared logger.o -o 98-logger.so
+
+	cd ../lib/hiredis/ && make
+	${CC} -fPIC -c anti_brute_force.c
+	${CC} -shared anti_brute_force.o ../lib/hiredis/libhiredis.a -o 90-anti_brute_force.so

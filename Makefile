@@ -21,4 +21,5 @@ clean:
 	${RMF} tcp_chain
 	${RMF} plugins/*.o
 	${RMF} plugins/*.so
+	cd lib/hiredis && make clean
 
