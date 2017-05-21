@@ -169,7 +169,7 @@ int validate_token(char* hex_token, struct sockaddr* src_addr) {
   init_ctr(&state);
   AES_ctr128_encrypt(token, token, len, &key, state.ivec, state.ecount, &(state.num));
 
-  LOG("[anti_crawler] decrpyted token: %s", token);
+  // LOG("[anti_crawler] decrpyted token: %s", token);
 
   struct sockaddr_in* src_addr_in = (struct sockaddr_in*)src_addr;
   char* source_ip = inet_ntoa(src_addr_in->sin_addr);
