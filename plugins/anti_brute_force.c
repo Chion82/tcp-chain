@@ -1,10 +1,10 @@
 /*
 
 Command:
---abf--port     (--abf-p)    :set monitored ports,seperated by ','
---abf--monitor  (--abf-m)    :set monitor time
---abf--request  (--abf-r)    :set max number of requests
---abf--ban      (--abf-b)    :set ban time
+--abf-ports    (--abf-p)    :set monitored ports,seperated by ','
+--abf-monitor  (--abf-m)    :set monitor time
+--abf-request  (--abf-r)    :set max number of requests
+--abf-ban      (--abf-b)    :set ban time
 
 */
 
@@ -132,16 +132,16 @@ void on_init(struct init_info* info) {
       
   int flag = 0;
   for (int i = 0; i < argc; i++) {
-    if (i != argc - 1 && (!strcmp(argv[i], "--abf--monitor")||!strcmp(argv[i], "--abf-m"))) {
+    if (i != argc - 1 && (!strcmp(argv[i], "--abf-monitor")||!strcmp(argv[i], "--abf-m"))) {
       MONITOR_TIME = argv[i + 1];
     }
-    if (i != argc - 1 && (!strcmp(argv[i], "--abf--request")||!strcmp(argv[i], "--abf-r"))) {
+    if (i != argc - 1 && (!strcmp(argv[i], "--abf-request")||!strcmp(argv[i], "--abf-r"))) {
       MAX_REQUEST = atoi(argv[i + 1]);
     }
-    if (i != argc - 1 && (!strcmp(argv[i], "--abf--ban")||!strcmp(argv[i], "--abf-b"))) {
+    if (i != argc - 1 && (!strcmp(argv[i], "--abf-ban")||!strcmp(argv[i], "--abf-b"))) {
       BAN_TIME = argv[i + 1];
     }
-    if (i != argc - 1 && (!strcmp(argv[i], "--abf--port")||!strcmp(argv[i], "--abf-p"))) {
+    if (i != argc - 1 && (!strcmp(argv[i], "--abf-ports")||!strcmp(argv[i], "--abf-p"))) {
       flag = 1;
       phase_ports(argv[i + 1]);
     }

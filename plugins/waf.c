@@ -1,7 +1,7 @@
 /*
 
 Command:
---waf--port     (--waf-p)    :set monitored ports,seperated by ','
+--waf-ports     (--waf-p)    :set monitored ports,seperated by ','
 
 */
 
@@ -352,7 +352,7 @@ setbuf(stdout,NULL);
       
   int flag = 0;
   for (int i = 0; i < argc; i++) {
-    if (i != argc - 1 && (!strcmp(argv[i], "--waf--port")||!strcmp(argv[i], "--waf-p"))) {
+    if (i != argc - 1 && (!strcmp(argv[i], "--waf-ports")||!strcmp(argv[i], "--waf-p"))) {
       flag = 1;
       phase_ports(argv[i + 1]);
     }

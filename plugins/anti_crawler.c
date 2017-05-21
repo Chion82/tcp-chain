@@ -1,3 +1,11 @@
+/*
+
+Command:
+--ac-ports     (--ac-p)    :set monitored ports,seperated by ','
+--ac-expires   (--ac-e)    :token expire time in seconds
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -97,7 +105,7 @@ void init_args(int argc, char** argv) {
   target_ports[0] = 80;
 
   for (int i=0; i<argc; i++) {
-    if (i != argc -1 && !strcmp(argv[i], "--ac-target-ports")) {
+    if (i != argc -1 && (!strcmp(argv[i], "--ac-ports") || !strcmp(argv[i], "--ac-p"))) {
       char* ports_string = argv[i + 1];
 
       char** ports_array = str_split(ports_string, ',');
@@ -110,7 +118,7 @@ void init_args(int argc, char** argv) {
       }
     }
 
-    if (i != argc -1 && !strcmp(argv[i], "--ac-expires")) {
+    if (i != argc -1 && (!strcmp(argv[i], "--ac-expires") || !strcmp(argv[i], "--ac-e"))) {
       expire_seconds = atoi(argv[i + 1]);
     }
   }
