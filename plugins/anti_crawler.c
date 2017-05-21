@@ -249,7 +249,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
 
   struct connection_info* conn = (struct connection_info*)(identifier->data);
   if (conn->is_allowed_pass) {
-    LOG("[anti_crawler] on_recv: Allow pass.");
+    // LOG("[anti_crawler] on_recv: Allow pass.");
     return;
   }
 
@@ -257,7 +257,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
     return;
   }
 
-  LOG("[anti_crawler] recv intercepted.");
+  // LOG("[anti_crawler] recv intercepted.");
 
   conn->recv_buf = realloc(conn->recv_buf, conn->recv_buf_len + frag_len);
   memcpy(conn->recv_buf + conn->recv_buf_len, frag_data, frag_len);
@@ -270,7 +270,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
   }
 
   if (strstr(conn->recv_buf, "GET /__get_ip") == conn->recv_buf) {
-    LOG("[anti_crawler] GETIP request. Responding with client IP address.");
+    // LOG("[anti_crawler] GETIP request. Responding with client IP address.");
 
     char* source_ip = inet_ntoa(((struct sockaddr_in*)(identifier->src_addr))->sin_addr);
     int ip_response_payload_len = strlen(HTTP_200_RESPONSE_HEADER) + strlen(source_ip);
@@ -297,13 +297,13 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
     char* token = malloc(token_match.rm_eo - token_match.rm_so + 1);
     bzero(token, token_match.rm_eo - token_match.rm_so + 1);
     memcpy(token, conn->recv_buf + token_match.rm_so, token_match.rm_eo - token_match.rm_so);
-    LOG("[anti_crawler] Got token: %s", token);
+    // LOG("[anti_crawler] Got token: %s", token);
 
     int is_token_valid = validate_token(token, identifier->src_addr);
     free(token);
 
     if (is_token_valid) {
-      LOG("[anti_crawler] token validation pass. Restoring received payload.");
+      // LOG("[anti_crawler] token validation pass. Restoring received payload.");
       conn->is_allowed_pass = 1;
       *p_data = realloc(*p_data, conn->recv_buf_len);
       memcpy(*p_data, conn->recv_buf, conn->recv_buf_len);
@@ -312,7 +312,7 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
     }
   }
 
-  LOG("[anti_crawler] Responding with block page.");
+  LOG("[anti_crawler] Blocking request.");
   int response_payload_len = strlen(HTTP_503_RESPONSE_HEADER) + strlen(block_response_content);
   char* response_payload = malloc(response_payload_len);
   bzero(response_payload, response_payload_len);
