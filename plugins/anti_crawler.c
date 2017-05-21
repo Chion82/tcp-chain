@@ -139,7 +139,7 @@ void init_ctr(struct ctr_state *state) {
   memset(state->ivec, 0, AES_BLOCK_SIZE);
 }
 
-int hexToBuf(char* hex, char* buffer, int len) {
+int hex_to_buf(char* hex, char* buffer, int len) {
   if (strlen(hex) % 2 != 0 || strlen(hex) / 2 != len) {
     return 1;
   }
@@ -161,7 +161,7 @@ int validate_token(char* hex_token, struct sockaddr* src_addr) {
   int len = strlen(hex_token) / 2;
   char* token = malloc(len + 1);
   bzero(token, len + 1);
-  if (hexToBuf(hex_token, token, len) != 0) {
+  if (hex_to_buf(hex_token, token, len) != 0) {
     goto token_validation_failed;
   }
 
