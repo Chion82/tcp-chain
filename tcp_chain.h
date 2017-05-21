@@ -20,6 +20,7 @@ struct init_info {
   int plugin_id;
   int (*relay_send)();
   int (*relay_close)();
+  int (*relay_pending_close)();
   void (*relay_pause_recv)();
   int argc;
   char** argv;

@@ -47,7 +47,7 @@ int relay_send_func(struct sock_info* identifier, char *buffer, size_t length, i
   char** p_buffer = &send_buffer;
   size_t *p_length = &length;
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    if (relay->active) {
+    if (relay->active && (!(relay->pending_close))) {
       (*(loaded_plugins[plugin_index].on_send))(&(relay->plugin_socks[plugin_index]), p_buffer, p_length);
     }
   }
@@ -119,6 +119,20 @@ int relay_close_func(struct sock_info* identifier) {
   return ret;
 }
 
+int relay_pending_close_func(struct sock_info* identifier) {
+  struct relay_info* relay = &(relays[identifier->relay_id]);
+  if (!(relay->active)) {
+    return -1;
+  }
+
+  if (relay->pending_send_data_len > 0) {
+    relay->pending_close = 1;
+    return 0;
+  } else {
+    return relay_close_func(identifier);
+  }
+}
+
 void relay_pause_recv_func(struct sock_info* identifier, int pause) {
   struct relay_info* relay = &(relays[identifier->relay_id]);
 
@@ -169,6 +183,8 @@ int init_relay(int sock_fd, struct sockaddr* src_addr, struct sockaddr* dst_addr
   relay->pending_send_data = (char*)malloc(BUFFER_SIZE);
   relay->pending_send_data_len = 0;
   relay->pending_send_data_buf_len = BUFFER_SIZE;
+
+  relay->pending_close = 0;
 
   return relay_index;
 }
@@ -267,6 +283,9 @@ int init_server_socket() {
   addr.sin_port = htons(PORT_NO);
   addr.sin_addr.s_addr = INADDR_ANY;
 
+  int option = 1;
+  setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+
   // Bind socket to address
   if (bind(sd, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
     perror("bind error");
@@ -322,6 +341,7 @@ int main(int argc, char* argv[]) {
     hook_init_info->plugin_id = i;
     hook_init_info->relay_send = relay_send_func;
     hook_init_info->relay_close = relay_close_func;
+    hook_init_info->relay_pending_close = relay_pending_close_func;
     hook_init_info->relay_pause_recv = relay_pause_recv_func;
     hook_init_info->argc = argc;
     hook_init_info->argv = argv;
@@ -441,6 +461,11 @@ void write_cb(struct ev_loop *loop, struct ev_io *w_, int revents) {
       (*(loaded_plugins[plugin_index].pause_remote_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), 0);
     }
     ev_io_stop(loop, watcher);
+
+    if (relay->pending_close == 1) {
+      LOG("Pending close connection %d", (relay->plugin_socks)[0].relay_id);
+      relay_close_func(&((relay->plugin_socks)[0]));
+    }
   }
 
 }
@@ -478,7 +503,7 @@ void read_cb(struct ev_loop *loop, struct ev_io *w_, int revents){
   char** p_buffer = &buffer;
   size_t* p_length = &read;
   for (int plugin_index=0; plugin_index<plugin_count; plugin_index++) {
-    if ((io_wrap->relay)->active) {
+    if ((io_wrap->relay)->active && (!((io_wrap->relay)->pending_close))) {
       (*(loaded_plugins[plugin_index].on_recv))(&(((io_wrap->relay)->plugin_socks)[plugin_index]), p_buffer, p_length);
     }
   }

@@ -24,6 +24,7 @@ struct relay_info {
   char* pending_send_data;
   size_t pending_send_data_len;
   size_t pending_send_data_buf_len;
+  int pending_close;
 };
 
 struct plugin_hooks {
