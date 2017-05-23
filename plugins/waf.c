@@ -213,13 +213,16 @@ void get_post_data(char** dst, char* src){
   while(p){
     if(strlen(p)==1){
       strcpy(*dst,*saveptr);
-      free(saveptr);
       // printf("%d\n", strlen(*dst));
       if(strlen(*dst)==0){break;}
+      free(saveptr);
       return;
     }
     p = strtok_r(*saveptr,delim,saveptr);
   }
+  free(saveptr);
+
+  free(*dst);
   *dst = NULL;
 }
 
@@ -246,6 +249,7 @@ void get_request_line(char** dst, char* src){
       }
     }    
   }
+  free(*dst);
   *dst = NULL;
 }
 
@@ -276,6 +280,7 @@ void get_value_by_key(char** dst, char* src, char* key){
     }
     p = strtok_r(*saveptr1,delim1,saveptr1);
   }
+  free(*dst);
   *dst = NULL;
 
 FREE:
@@ -409,9 +414,9 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
   match(url,&url_regex,identifier);
   match(args,&args_regex,identifier);
 
-  //if(is_relay_closed){
+  if(is_relay_closed){
     console();
-  //}
+  }
   
   return;
 }
