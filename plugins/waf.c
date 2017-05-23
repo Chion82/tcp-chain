@@ -30,7 +30,7 @@ Command:
 #define PORTS_ADD     10
 #define REGEX_ADD     50
 #define MAX_CMD_LEN   128
-#define BUF_SIZE      256
+#define BUF_SIZE      2048
 #define TYPE_COUNT    6
 #define NMATCH        10
 #define MARK_PREFIX   "\033[01;31m"   //set font red
@@ -233,7 +233,9 @@ void get_request_line(char** dst, char* src){
   char* p;
   char request_line[BUF_SIZE];
 
-  sscanf(src,"%[^\n]",request_line);
+  if(1 == sscanf(src,"%[^\n]",request_line)){
+
+  }
   if(request_line){
     p = strtok(request_line,delim);
     if(p){
@@ -407,9 +409,9 @@ void on_recv(struct sock_info* identifier, char** p_data, size_t* length) {
   match(url,&url_regex,identifier);
   match(args,&args_regex,identifier);
 
-  if(is_relay_closed){
+  //if(is_relay_closed){
     console();
-  }
+  //}
   
   return;
 }
