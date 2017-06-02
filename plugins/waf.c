@@ -24,7 +24,7 @@ Command:
 #include <regex.h>
 
 
-#include "../tcp_chain.h"
+#include "../aegis.h"
 
 
 #define PORTS_ADD     10
@@ -113,7 +113,7 @@ void read_regex_conf(Regex* dst, char* filename){
 
     buf[strlen(buf)-1] = '\0';
     regex_t* preg = (regex_t*)malloc(sizeof(regex_t));
-    int status = regcomp(preg,(char*)buf,REG_EXTENDED);        
+    int status = regcomp(preg,(char*)buf,REG_EXTENDED|REG_ICASE);        
     dst->regex[dst->line_count++] = preg;
   }
   fclose(file);

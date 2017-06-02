@@ -1,6 +1,6 @@
-TCP Chain
+Aegis
 ---------
-TCP Chain是一个可拓展、高性能的TCP网络钩子框架（中间件）。通过使用框架提供的API开发插件，可快速实现自定义网络钩子或代理程序。
+Aegis(TCP Chain)是一个可拓展、高性能的TCP网络钩子框架（中间件）。通过使用框架提供的API开发插件，可快速实现自定义网络钩子或代理程序。
 
 [插件开发指南](./docs/plugin_dev_guide.md)  
 [API文档](./docs/api.md)
@@ -36,9 +36,9 @@ $ make
 # iptables -t nat -A OUTPUT -p tcp -d [主机IP] --dport [服务端口] -m mark ! --mark 100 -j REDIRECT --to-port 3033
 ```
 
-* 运行`tcp_chain`（需要`sudo`或在root下运行）：
+* 运行Aegis（需要`sudo`或在root下运行）：
 ```
-# ./tcp_chain
+# bash RUN.sh [options...]
 ```
 
 ### 可选运行参数

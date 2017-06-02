@@ -11,7 +11,7 @@ build:
 
 build_main:
 	${CC} -c main.c
-	${CC} main.o -o tcp_chain -lev -ldl
+	${CC} main.o -o aegis -lev -ldl
 
 build_plugins:
 	cd plugins && make build

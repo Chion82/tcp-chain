@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include "../tcp_chain.h"
+#include "../aegis.h"
 
 void on_init(struct init_info* info) {
   LOG("Logger plugin loaded. Plugin ID is %d.", info->plugin_id);

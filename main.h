@@ -1,7 +1,7 @@
 #include <ev.h>
 #include <netinet/in.h>
 
-#include "tcp_chain.h"
+#include "aegis.h"
 
 #define MAX_PLUGINS 32
 #define MAX_RELAYS 16384
