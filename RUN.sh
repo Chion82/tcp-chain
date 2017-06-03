@@ -43,7 +43,6 @@ done
 
 # other settings
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-gnome-terminal -x bash -c "make;" >/dev/null
 gnome-terminal -x bash -c "redis-server;" >/dev/null
 echo "> redis server is on" 
 sudo iptables -t nat -A PREROUTING -p tcp -d 127.0.0.1 --dport 80 -m mark ! --mark 100 -j REDIRECT --to-port 3033
