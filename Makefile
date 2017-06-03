@@ -18,8 +18,8 @@ build_plugins:
 
 clean:
 	${RMF} *.o
-	${RMF} tcp_chain
+	${RMF} aegis
 	${RMF} plugins/*.o
 	${RMF} plugins/*.so
-	cd lib/hiredis && make clean
+	cd lib/* && make clean
 

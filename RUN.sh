@@ -12,7 +12,14 @@ dependency=(
 	"libssl-dev"
 	"iptables"
 	"redis-server"
+	#add here
 )
+
+
+user=`whoami`
+if [ "$user" != "root" ]; then
+    sudo root
+fi
 
 
 # check dependencies
@@ -26,12 +33,17 @@ for (( i = 0; i < ${#dependency[*]}; i++ )); do
 	else
 		printf "> %-30s[not installed]\r" $name
 		sudo apt-get install "$name"
+		if [[ $? > 0 ]]; then
+			echo "\033[01;31mAEGIS: apt-get error. Please check network condition and apt-get version.\033[0m"
+			exit 
+		fi
 	fi
 	echo
 done
 
 # other settings
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+gnome-terminal -x bash -c "make;" >/dev/null
 gnome-terminal -x bash -c "redis-server;" >/dev/null
 echo "> redis server is on" 
 sudo iptables -t nat -A PREROUTING -p tcp -d 127.0.0.1 --dport 80 -m mark ! --mark 100 -j REDIRECT --to-port 3033
@@ -40,4 +52,4 @@ echo "> NAT redirected"
 
 #launch Ageis
 echo ">>>[Ageis]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-eval sudo ./tcp_chain $@
+eval sudo ./aegis $@
